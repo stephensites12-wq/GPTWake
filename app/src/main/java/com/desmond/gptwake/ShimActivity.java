@@ -54,7 +54,7 @@ public class ShimActivity extends Activity {
         String action = getIntent().getStringExtra(EXTRA_ACTION);
         if ("launch".equals(action)) {
             L.i("SHIM_LAUNCH_RESULT=" + GptLauncher.launch(this));
-            done(800);
+            // Keep the show-when-locked shim alive during the ChatGPT voice session.
             return;
         }
 
