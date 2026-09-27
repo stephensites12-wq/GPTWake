@@ -1,0 +1,71 @@
+name: Build Modified GPTWake APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools"
+
+      - name: Install Android platform and build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+
+          install_pkg() {
+            local pkg="$1"
+            if sdkmanager "$pkg"; then
+              return 0
+            fi
+            sdkmanager --channel=3 "$pkg"
+          }
+
+          install_pkg "platforms;android-37.0"
+          install_pkg "build-tools;37.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Test and build modified GPTWake
+        shell: bash
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Prepare APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cp app/build/outputs/apk/debug/app-debug.apk out/GPTWake-deeplink-debug.apk
+          sha256sum out/GPTWake-deeplink-debug.apk > out/SHA256SUMS.txt
+
+      - name: Upload modified APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: GPTWake-deeplink-debug
+          retention-days: 30
+          path: |
+            out/GPTWake-deeplink-debug.apk
+            out/SHA256SUMS.txt
