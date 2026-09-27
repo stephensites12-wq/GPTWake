@@ -49,6 +49,6 @@ public final class GptLauncher {
     }
 
     public static boolean launch(Context context) {
-        return launchDirect(context) || launchDeeplink(context);
+        return launchDeeplink(context);
     }
 }
